@@ -6,7 +6,7 @@ chat-format dependency. Nothing outside this directory is required.
 
 Layout: `model.py` / `kernel.py` (model + tilelang kernels), `generate.py`
 (inference entry, incl. dspark speculative decoding, see
-`dspark-spec-decoding.md`), `convert.py` / `convert-fp8.sh` (checkpoint
+`dspark-spec-decoding.md`), `convert.py` / `run-fp8.sh` (checkpoint
 conversion), `encoding/` (DeepSeek-V4 chat encoding, self-contained),
 `eval_spec.py` / `check_correct.py` / `test_spec*.py` (spec-decoding
 evaluation, correctness checks, smoke tests).
@@ -21,8 +21,9 @@ uv venv && uv pip install -r requirements.txt
 uv pip install $FAST_HADAMARD_WHEEL --no-build-isolation
 ```
 
-`convert-fp8.sh` bootstraps the same `.venv` automatically (conversion +
-8-GPU inference in one go).
+`run-fp8.sh` bootstraps the same `.venv` automatically (conversion +
+8-GPU inference in one go). `DSPARK=1` enables dspark speculative decoding
+(interactive and batch modes; see `dspark-spec-decoding.md`).
 
 First convert huggingface model weight files to the format of this project.
 ```bash

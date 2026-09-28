@@ -2,9 +2,10 @@
 # DeepSeek-V4-Flash-0731: HF 权重 -> FP8 布局转换 + 8 卡推理
 # H20(Hopper) 无 FP4 张量核心, expert 必须转 fp8: convert.py 带 --expert-dtype fp8,
 # 推理用本目录 config-fp8.json(= config.json 去掉 "expert_dtype": "fp4")。
-# 用法: HF_CKPT_PATH=... SAVE_PATH=... FAST_HADAMARD_WHEEL=... bash convert-fp8.sh (三者必传, 无默认值)
+# 用法: HF_CKPT_PATH=... SAVE_PATH=... FAST_HADAMARD_WHEEL=... bash run-fp8.sh (三者必传, 无默认值)
 # 推理模式: 默认 batch(读 prompts.txt, 验证跑通); INTERACTIVE=1 进交互模式;
-#           INPUT_FILE / MAX_NEW_TOKENS 可覆盖批量输入与新 token 数
+#           INPUT_FILE / MAX_NEW_TOKENS 可覆盖批量输入与新 token 数;
+#           DSPARK=1 开 dspark 投机解码 (batch 模式逐条处理, 见 dspark-spec-decoding.md)
 set -xeuo pipefail
 
 # 依赖(.venv/requirements.txt/config-fp8.json/convert.py)均为相对路径, 切到脚本所在目录
@@ -25,18 +26,25 @@ uv pip install -r requirements.txt
 if [ -f "$FAST_HADAMARD_WHEEL" ]; then
     uv pip install "$FAST_HADAMARD_WHEEL" --no-build-isolation
 else
-    echo "[convert-fp8] FATAL: fast_hadamard_transform wheel 不存在: $FAST_HADAMARD_WHEEL" >&2
-    echo "[convert-fp8]        请检查 FAST_HADAMARD_WHEEL 指向的 wheel 路径" >&2
+    echo "[run-fp8] FATAL: fast_hadamard_transform wheel 不存在: $FAST_HADAMARD_WHEEL" >&2
+    echo "[run-fp8]        请检查 FAST_HADAMARD_WHEEL 指向的 wheel 路径" >&2
     exit 1
 fi
 .venv/bin/python -c "import fast_hadamard_transform" \
-  || { echo "[convert-fp8] FATAL: fast_hadamard_transform 安装后仍无法导入" >&2; exit 1; }
+  || { echo "[run-fp8] FATAL: fast_hadamard_transform 安装后仍无法导入" >&2; exit 1; }
 
 source .venv/bin/activate
 
 EXPERTS=256
 MP=8
 CONFIG="./config-fp8.json"
+
+# dspark 投机解码开关 (generate.py --spec): 开启后 batch 模式逐条跑 prompt,
+# 交互模式单条不受影响; 结束时打印 vllm 同格式的 SpecDecoding metrics
+SPEC_FLAG=()
+case "${DSPARK:-0}" in
+    1|yes|YES) SPEC_FLAG=(--spec) ;;
+esac
 
 # 恰好 $MP 个 shard 才视为已转换完成(转换耗时久, 跳过); 目录不存在/不完整则重新转换
 n_safetensors=0
@@ -49,9 +57,10 @@ if [ "$n_safetensors" -ne "$MP" ]; then
 fi
 
 if [ "${INTERACTIVE:-0}" = "1" ]; then
-    torchrun --nproc-per-node "${MP}" generate.py --ckpt-path "${SAVE_PATH}" --config "${CONFIG}" --interactive
+    torchrun --nproc-per-node "${MP}" generate.py --ckpt-path "${SAVE_PATH}" --config "${CONFIG}" \
+        --interactive "${SPEC_FLAG[@]}"
 else
     INPUT_FILE=${INPUT_FILE:-"$(cd "$(dirname "$0")" && pwd)/prompts.txt"}
     torchrun --nproc-per-node "${MP}" generate.py --ckpt-path "${SAVE_PATH}" --config "${CONFIG}" \
-        --input-file "${INPUT_FILE}" --max-new-tokens "${MAX_NEW_TOKENS:-64}"
+        --input-file "${INPUT_FILE}" --max-new-tokens "${MAX_NEW_TOKENS:-64}" "${SPEC_FLAG[@]}"
 fi

@@ -1,6 +1,9 @@
-# Add dspark to DeepSeek-V4-Flash-0731 inference demo, adapted from https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/tree/main/inference
+# Add dspark to DeepSeek-V4-Flash-0731 inference demo
 
-docs at [dspark-spec-decoding.md](./dspark-spec-decoding.md)
+Adapted from https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/tree/main/inference
+
+Docs at [dspark-spec-decoding.md](./dspark-spec-decoding.md)
+
 ---
 
 # Inference code for DeepSeek models

@@ -33,7 +33,9 @@ fi
 .venv/bin/python -c "import fast_hadamard_transform" \
   || { echo "[run-fp8] FATAL: fast_hadamard_transform 安装后仍无法导入" >&2; exit 1; }
 
-source .venv/bin/activate
+# 后续 python/torchrun 一律用 .venv 显式路径, 不 source activate
+PY=.venv/bin/python
+TORCHRUN=.venv/bin/torchrun
 
 EXPERTS=256
 MP=8
@@ -52,15 +54,15 @@ if [ -d "$SAVE_PATH" ]; then
     n_safetensors=$(find "$SAVE_PATH" -maxdepth 1 -name '*.safetensors' | wc -l)
 fi
 if [ "$n_safetensors" -ne "$MP" ]; then
-    python convert.py --hf-ckpt-path "${HF_CKPT_PATH}" --save-path "${SAVE_PATH}" \
+    "$PY" convert.py --hf-ckpt-path "${HF_CKPT_PATH}" --save-path "${SAVE_PATH}" \
         --n-experts "${EXPERTS}" --model-parallel "${MP}" --expert-dtype fp8
 fi
 
 if [ "${INTERACTIVE:-0}" = "1" ]; then
-    torchrun --nproc-per-node "${MP}" generate.py --ckpt-path "${SAVE_PATH}" --config "${CONFIG}" \
+    "$TORCHRUN" --nproc-per-node "${MP}" generate.py --ckpt-path "${SAVE_PATH}" --config "${CONFIG}" \
         --interactive "${SPEC_FLAG[@]}"
 else
     INPUT_FILE=${INPUT_FILE:-"$(cd "$(dirname "$0")" && pwd)/prompts.txt"}
-    torchrun --nproc-per-node "${MP}" generate.py --ckpt-path "${SAVE_PATH}" --config "${CONFIG}" \
+    "$TORCHRUN" --nproc-per-node "${MP}" generate.py --ckpt-path "${SAVE_PATH}" --config "${CONFIG}" \
         --input-file "${INPUT_FILE}" --max-new-tokens "${MAX_NEW_TOKENS:-64}" "${SPEC_FLAG[@]}"
 fi

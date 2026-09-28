@@ -210,8 +210,6 @@ def generate_spec(
         ctx_start = pos
         pos += m
         anchor = tokens[:, pos:pos + 1].clone()
-        if own_metrics and metrics.steps % 100 == 0:
-            print(metrics.summary(time.time() - t_start))
 
     # Plain single-token decoding tail (sequence-end boundary or loop exit above).
     while generated < max_new_tokens and not finished and pos + 1 < total_len:

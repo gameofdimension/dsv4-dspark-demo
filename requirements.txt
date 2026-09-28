@@ -1,0 +1,7 @@
+torch==2.10.0
+transformers>=5.0.0
+safetensors>=0.7.0
+tilelang==0.1.14
+# tilelang 0.1.8 自带 tvm 与 apache-tvm-ffi>=0.1.12 不兼容(import 即崩);
+# 0.1.8+0.1.11 组合 import 可过但 JIT 编译内核崩, 唯一验证可用: 0.1.14+0.1.11
+apache-tvm-ffi==0.1.11

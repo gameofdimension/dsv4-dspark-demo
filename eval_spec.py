@@ -15,7 +15,6 @@ Usage:
 import json
 import os
 import random
-import sys
 import time
 from argparse import ArgumentParser
 
@@ -24,11 +23,7 @@ import torch.distributed as dist
 from transformers import AutoTokenizer
 from safetensors.torch import load_model
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, current_dir)
-encoding_dir = os.path.join(current_dir, 'encoding')
-sys.path.insert(0, os.path.abspath(encoding_dir))
-from encoding_dsv4 import encode_messages
+from encoding.encoding_dsv4 import encode_messages
 
 from model import Transformer, ModelArgs
 from generate import generate_spec, SpecMetrics

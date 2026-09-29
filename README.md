@@ -8,9 +8,9 @@ Docs at [dspark-spec-decoding.md](./dspark-spec-decoding.md)
 
 # Inference code for DeepSeek models
 
-Standalone inference demo for DeepSeek-V4-Flash extracted from the internal
-the monorepo repo: the model/inference code plus the bundled `encoding/`
-chat-format dependency. Nothing outside this directory is required.
+Standalone inference demo for DeepSeek-V4-Flash: the model/inference code
+plus the bundled `encoding/` chat-format dependency. Nothing outside this
+directory is required.
 
 Layout: `model.py` / `kernel.py` (model + tilelang kernels), `generate.py`
 (inference entry, incl. dspark speculative decoding, see
@@ -22,7 +22,8 @@ evaluation, correctness checks, smoke tests).
 Environment: Python 3.12 + CUDA 13 torch 2.10, pinned in `requirements.txt`
 (`tilelang==0.1.14` + `apache-tvm-ffi==0.1.11` is the only combination
 verified to JIT-compile the kernels). `fast_hadamard_transform` has no wheel
-on the internal mirror — pass one in externally:
+published — pass one in externally (users behind a mirror can `export
+PIP_INDEX_URL=<mirror>/simple`; uv and pip both honor it):
 
 ```bash
 uv venv && uv pip install -r requirements.txt

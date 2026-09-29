@@ -10,6 +10,7 @@ set -xeuo pipefail
 
 # 依赖(.venv/requirements.txt/config-fp8.json/convert.py)均为相对路径, 切到脚本所在目录
 cd "$(dirname "$0")"
+# 镜像源用户可 export PIP_INDEX_URL=<mirror>/simple (uv/pip 均识别), 默认走公网 PyPI
 command -v uv >/dev/null 2>&1 || pip install uv
 
 if [ ! -d ".venv" ]; then
